@@ -65,7 +65,12 @@ router.post('/plan', authMiddleware, async (req, res) => {
 
 router.post('/create-tomorrow', authMiddleware, async (req, res) => {
   try {
-    const { todayDate, tomorrowDate } = req.body;
+    const { currentDate } = req.body;
+
+    const todayDate = currentDate;
+    const tomorrow = new Date(currentDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDate = tomorrow.toISOString().split('T')[0];
 
     const todayPlan = await DailyPlan.findOne({
       userId: req.userId,
@@ -77,35 +82,44 @@ router.post('/create-tomorrow', authMiddleware, async (req, res) => {
     }
 
     const unfinishedTasks = todayPlan.brainDump.filter(task =>
-      (task.status === 'open' || task.status === 'open-open') &&
+      (task.status === 'open' || task.status === 'open-outstanding') &&
       task.status !== 'completed' &&
       task.status !== 'deleted'
     );
 
-    const ooTasks = unfinishedTasks.filter(t => t.status === 'open-open').map(t => t.id);
+    const ooTasks = unfinishedTasks.filter(t => t.status === 'open-outstanding').map(t => t.id);
     const oTasks = unfinishedTasks.filter(t => t.status === 'open').map(t => t.id);
 
     const resetTasks = unfinishedTasks.map(task => ({
-      ...task.toObject(),
+      ...task,
       status: 'open'
     }));
 
-    const tomorrowPlan = new DailyPlan({
+    let tomorrowPlan = await DailyPlan.findOne({
       userId: req.userId,
-      date: tomorrowDate,
-      brainDump: [...todayPlan.brainDump.map(t => ({
-        ...t.toObject(),
-        status: resetTasks.find(rt => rt.id === t.id) ? 'open' : t.status
-      }))],
-      top3: ooTasks.slice(0, 3),
-      secondary3: [...ooTasks.slice(3), ...oTasks].slice(0, 3),
-      timeBlocks: [],
-      planningMode: '6-task'
+      date: tomorrowDate
     });
+
+    if (tomorrowPlan) {
+      tomorrowPlan.brainDump = [...resetTasks, ...tomorrowPlan.brainDump];
+      tomorrowPlan.top3 = ooTasks.slice(0, 3);
+      tomorrowPlan.secondary3 = [...ooTasks.slice(3), ...oTasks].slice(0, 3);
+    } else {
+      tomorrowPlan = new DailyPlan({
+        userId: req.userId,
+        date: tomorrowDate,
+        brainDump: resetTasks,
+        top3: ooTasks.slice(0, 3),
+        secondary3: [...ooTasks.slice(3), ...oTasks].slice(0, 3),
+        timeBlocks: [],
+        planningMode: '6-task'
+      });
+    }
 
     await tomorrowPlan.save();
     res.json(tomorrowPlan);
   } catch (error) {
+    console.error('❌ Create tomorrow error:', error);
     res.status(500).json({ error: 'Error creating tomorrow\'s plan' });
   }
 });
