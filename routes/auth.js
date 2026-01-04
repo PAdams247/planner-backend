@@ -6,7 +6,16 @@ const User = require('../models/User');
 
 router.post('/signup', async (req, res) => {
   try {
+    console.log('📥 Signup request received');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      console.log('❌ Missing fields - email:', email, 'password:', password ? '[PROVIDED]' : '[MISSING]');
+      return res.status(400).json({ error: 'All fields are required' });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -35,13 +44,23 @@ router.post('/signup', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('❌ Signup error:', error);
     res.status(500).json({ error: 'Error creating user' });
   }
 });
 
 router.post('/login', async (req, res) => {
   try {
+    console.log('📥 Login request received');
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
+
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      console.log('❌ Missing fields - email:', email, 'password:', password ? '[PROVIDED]' : '[MISSING]');
+      return res.status(400).json({ error: 'All fields are required' });
+    }
 
     const user = await User.findOne({ email });
     if (!user) {
