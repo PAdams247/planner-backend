@@ -1,3 +1,8 @@
+// TODO: SECURITY - Whitelist specific Render IP addresses in MongoDB Atlas
+// Currently using "Allow Access from Anywhere" (0.0.0.0/0)
+// See: https://render.com/docs/static-outbound-ip-addresses
+// MongoDB Atlas: Network Access settings
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
