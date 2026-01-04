@@ -11,7 +11,7 @@ require('dotenv').config();
 const app = express();
 
 const corsOptions = {
-  origin: ['https://parkeradams.dev', 'http://localhost:3000'],
+  origin: ['https://parkeradams.dev', 'https://www.parkeradams.dev', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -22,6 +22,7 @@ app.use(express.json());
 
 app.use((req, res, next) => {
   console.log(`📨 ${req.method} ${req.path}`);
+  console.log('Origin:', req.headers.origin);
   console.log('Content-Type:', req.headers['content-type']);
   next();
 });
